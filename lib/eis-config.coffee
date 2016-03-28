@@ -6,6 +6,9 @@ module.exports = EisConfig =
   modalPanel: null
   subscriptions: null
 
+  serialize: ->
+    eisConfigViewState: @eisConfigView.serialize()
+
   activate: (state) ->
     @eisConfigView = new EisConfigView(state.eisConfigViewState)
 
@@ -17,36 +20,31 @@ module.exports = EisConfig =
     # Register command that toggles this view
     # @subscriptions.add atom.commands.add 'atom-workspace', 'eis-config:toggle': =>
 
-    atom.workspace.observeActivePaneItem (editor) => @determineAction(editor)
-
+    atom.workspace.observeActivePaneItem (editor) => @determineAction(editor.getTitle())
 
   deactivate: ->
     @modalPanel.destroy()
     @subscriptions.dispose()
     @eisConfigView.destroy()
 
-  determineAction: (editor) ->
-    if @isConfigFile(editor.getTitle())
-      console.log 'Searching for duplicates in ' + editor.getTitle()
-      @doAction()
+  determineAction: (fileName) ->
+    if @isConfigFile(fileName)
+      console.log 'Searching for duplicates in ' + fileName
+      @findDuplicateKeys()
 
   isConfigFile: (fileName) ->
     return fileName.endsWith('.config')
 
-  serialize: ->
-    eisConfigViewState: @eisConfigView.serialize()
-
   splitValue: (text, index, lineNumber) ->
     return {key: text.substring(0, index), value: text.substring(index+1), rowNum: lineNumber}
-
 
   toggle: ->
     if @modalPanel.isVisible()
       #@modalPanel.hide()
     else
-      @doAction()
+      @findDuplicateKeys()
 
-  doAction: ->
+  findDuplicateKeys: ->
     lines = @getCurrentEditorLines()
     configurationParameters = @parseConfigFile(lines)
     duplicateKeysCount = 0
@@ -66,21 +64,49 @@ module.exports = EisConfig =
     editor = atom.workspace.getActiveTextEditor();
     return editor.getText().split(/\n/)
 
-  processLine: (fileLine, i) ->
-    line = fileLine.trim()
-    if line.length && !line.startsWith("#")
-      equalsPos = line.indexOf('=')
-      if equalsPos != -1
-        return @splitValue(line, equalsPos, i)
+  validateConfigurationEntry: (entry) ->
+    entry = entry.trim();
+
+    entryObject =
+      valid: false,
+      equalsPos: -1,
+      content: entry
+
+    if entry.length == 0
+      return entryObject
+
+    if entry.startsWith("#")
+      return entryObject
+
+    equalsPos = entry.indexOf('=')
+    if equalsPos == -1
+      return entryObject
+
+    entryObject.equalsPos = equalsPos
+    entryObject.valid = true
+
+    return entryObject
+
+
+  processLine: (line, lineNumber) ->
+    lineObject = @validateConfigurationEntry(line)
+    if lineObject.valid
+        paramObject =
+          key: lineObject.content.substring(0, lineObject.equalsPos),
+          value: lineObject.content.substring(lineObject.equalsPos+1),
+          rowNum: lineNumber
+        return paramObject
+
+  pushParameterValue: (parameter, configurationParameters) ->
+    keyValues = configurationParameters[parameter.key]
+    if keyValues !instanceof Array
+      keyValues = []
+      configurationParameters[parameter.key] = keyValues
+    keyValues.push(parameter)
 
   parseConfigFile: (lines) ->
     configurationParameters = {}
     for i in [0..lines.length-1]
-      currentParam = @processLine(lines[i], i+1)
-      if currentParam
-        keyValues = configurationParameters[currentParam.key]
-        if keyValues !instanceof Array
-          keyValues = []
-          configurationParameters[currentParam.key] = keyValues
-        keyValues.push(currentParam)
+      if currentParam = @processLine(lines[i], i+1)
+        @pushParameterValue(currentParam, configurationParameters)
     return configurationParameters
