@@ -1,0 +1,18 @@
+{
+  "name": "eis-config",
+  "main": "./lib/eis-config",
+  "version": "0.0.0",
+  "description": "Tool for editing EIS Java configuration files",
+  "keywords": [
+  ],
+  "activationCommands": {
+    "atom-workspace": "eis-config:toggle"
+  },
+  "repository": "https://github.com/atom/eis-config",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=1.0.0 <2.0.0"
+  },
+  "dependencies": {
+  }
+}
