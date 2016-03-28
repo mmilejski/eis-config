@@ -17,16 +17,6 @@ module.exports = EisConfig =
     # Register command that toggles this view
     # @subscriptions.add atom.commands.add 'atom-workspace', 'eis-config:toggle': =>
 
-
-    # atom.workspaceView.command "mavensmate:delete-file-from-server", =>
-    #   # do setup stuff (build the params object)
-    #   atom.confirm
-    #     message: "You sure?"
-    #     buttons: ["Cancel", "Delete"]
-    #   if answer == 1
-    #     @mm.run(params).then (result) =>
-    #     @mmResponseHandler(params, result)
-
     atom.workspace.observeActivePaneItem (editor) => @determineAction(editor)
 
 
