@@ -2,7 +2,7 @@
   "name": "eis-config",
   "main": "./lib/eis-config",
   "version": "0.0.0",
-  "description": "Tool for editing EIS Java configuration files",
+  "description": "Tool for editing Java properties files",
   "keywords": [
   ],
   "activationCommands": {
